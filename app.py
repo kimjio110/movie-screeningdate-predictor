@@ -27,7 +27,12 @@ DATA_PATH = "movie_data_cleaned.csv"
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv(DATA_PATH)
+    # CSV 파일 인코딩 오류 방지
+    # UTF-8로 먼저 읽고, 안 되면 한국어 엑셀 CSV에서 자주 쓰는 CP949로 다시 읽음
+    try:
+        df = pd.read_csv(DATA_PATH, encoding="utf-8")
+    except UnicodeDecodeError:
+        df = pd.read_csv(DATA_PATH, encoding="cp949")
 
     # 필요한 컬럼만 사용
     use_cols = [
@@ -108,7 +113,7 @@ def train_model(df):
 
     model.fit(X_train, y_train)
 
-    # 모델 평가용
+    # 모델 평가용 예측
     pred = model.predict(X_test)
 
     mae = mean_absolute_error(y_test, pred)
@@ -194,6 +199,7 @@ if st.button("예측하기"):
     # 최소 1일 이상으로 보정
     predicted_days = max(1, predicted_days)
 
+    # 개봉일 + 예측된 상영 지속일수 = 예상 마지막 상영일
     predicted_last_date = release_date + timedelta(days=predicted_days)
 
     st.divider()
